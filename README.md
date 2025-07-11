@@ -13,4 +13,5 @@ The focus is on building real-world DevOps skills including:
 Each folder contains code, configs, or notes for weekly tasks and projects.  
 This repo reflects my journey from DevOps fundamentals to deploying and automating real services.
 
-> 📅 Internship Duration: 5-July-2025 — Ongoing
+> 📅 Internship Duration: 5-July-2025 - Ongoing
+
