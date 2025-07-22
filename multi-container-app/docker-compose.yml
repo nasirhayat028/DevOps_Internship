@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:7.2
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-net
+
+  web:
+    image: nasirhayat028/node-redis-app:v2   # 🔁 Use pushed image from Docker Hub
+    ports:
+      - "3000:3000"
+    depends_on:
+      - redis
+    networks:
+      - app-net
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - GREETING=Hello Dears Interns...!
+
+volumes:
+  redis-data:
+
+networks:
+  app-net:
+    driver: overlay    # ✅ Use Swarm overlay network
