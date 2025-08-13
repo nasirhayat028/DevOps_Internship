@@ -1,6 +1,12 @@
+<<<<<<< HEAD
 *.log
 node_modules/
 *.swp
 *.swo
 
 
+=======
+node_modules/
+*.log
+.env
+>>>>>>> def60fa (Initial commit: kubernetes Work)
