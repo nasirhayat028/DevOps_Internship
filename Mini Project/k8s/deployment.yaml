@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mini-game
+  labels:
+    app: mini-game
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mini-game
+  template:
+    metadata:
+      labels:
+        app: mini-game
+    spec:
+      containers:
+        - name: web
+          image: nasirhayat028/docker-k8s-project:v2
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 2
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 20
+
