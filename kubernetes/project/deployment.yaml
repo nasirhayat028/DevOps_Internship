@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: todo-app-deployment
-spec:
+spec: 
   replicas: 2
   selector:
     matchLabels:
@@ -17,3 +17,4 @@ spec:
         image: nasirhayat028/todo-node-app:v1
         ports:
         - containerPort: 3005
+        
