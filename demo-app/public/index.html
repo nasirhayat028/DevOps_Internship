@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Management</title>
+  <style>
+    :root { --bg:#0f172a; --card:#111827; --muted:#94a3b8; --text:#e5e7eb; --accent:#22c55e; --danger:#ef4444; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; background: var(--bg); color: var(--text); }
+    .container { max-width: 720px; margin: 40px auto; padding: 0 16px; }
+    .card { background: var(--card); border: 1px solid #1f2937; border-radius: 12px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+    h1 { margin: 0 0 16px; font-size: 24px; }
+    p.muted { color: var(--muted); margin-top: 0; }
+    form { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; margin-top: 16px; }
+    input { background: #0b1220; color: var(--text); border: 1px solid #26324a; border-radius: 8px; padding: 10px 12px; outline: none; }
+    input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
+    button { background: var(--accent); color: #052e1b; font-weight: 600; border: none; border-radius: 8px; padding: 10px 14px; cursor: pointer; }
+    button:disabled { opacity: .7; cursor: not-allowed; }
+    .list { margin-top: 20px; }
+    .user { display: flex; justify-content: space-between; align-items: center; padding: 12px; border: 1px solid #1f2937; border-radius: 10px; background: #0b1220; gap: 12px; }
+    .user + .user { margin-top: 10px; }
+    .small { color: var(--muted); font-size: 12px; }
+    .error { color: var(--danger); margin-top: 8px; }
+    .actions { display: flex; gap: 8px; }
+    .btn-secondary { background: #1f2937; color: #e5e7eb; }
+    .inline-input { background: #07101c; color: var(--text); border: 1px solid #26324a; border-radius: 6px; padding: 6px 8px; margin-right: 8px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>User Management</h1>
+      <p class="muted">Add a user and view the saved users below.</p>
+      <form id="userForm">
+        <input id="name" name="name" placeholder="Full name" required />
+        <input id="phone" name="phone" placeholder="Phone" required />
+        <button type="submit" id="submitBtn">Add</button>
+      </form>
+      <div id="formError" class="error" style="display:none"></div>
+
+      <div class="list" id="users"></div>
+      <p id="empty" class="small" style="display:none">No users yet. Add the first one above.</p>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('userForm');
+    const nameEl = document.getElementById('name');
+    const phoneEl = document.getElementById('phone');
+    const submitBtn = document.getElementById('submitBtn');
+    const usersEl = document.getElementById('users');
+    const emptyEl = document.getElementById('empty');
+    const errorEl = document.getElementById('formError');
+
+    async function fetchUsers() {
+      const res = await fetch('/users');
+      const json = await res.json();
+      renderUsers(Array.isArray(json.data) ? json.data : []);
+    }
+
+    function renderUsers(list) {
+      usersEl.innerHTML = '';
+      if (!list.length) {
+        emptyEl.style.display = 'block';
+        return;
+      }
+      emptyEl.style.display = 'none';
+      for (const u of list) {
+        const div = document.createElement('div');
+        div.className = 'user';
+        const left = document.createElement('div');
+        left.innerHTML = `<strong>${escapeHtml(u.name)}</strong><div class="small">${escapeHtml(u.phone)}</div>`;
+
+        const meta = document.createElement('div');
+        meta.className = 'small';
+        meta.textContent = new Date(u.createdAt).toLocaleString();
+
+        const actions = document.createElement('div');
+        actions.className = 'actions';
+
+        const editBtn = document.createElement('button');
+        editBtn.className = 'btn-secondary';
+        editBtn.textContent = 'Edit';
+        editBtn.addEventListener('click', () => startInlineEdit(div, u));
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn-secondary';
+        delBtn.textContent = 'Delete';
+        delBtn.addEventListener('click', () => deleteUser(u.id));
+
+        actions.appendChild(editBtn);
+        actions.appendChild(delBtn);
+
+        div.appendChild(left);
+        div.appendChild(meta);
+        div.appendChild(actions);
+        usersEl.appendChild(div);
+      }
+    }
+
+    function escapeHtml(s) { return String(s).replace(/[&<>"]+/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])); }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorEl.style.display = 'none';
+      const name = nameEl.value.trim();
+      const phone = phoneEl.value.trim();
+      if (!name || !phone) {
+        errorEl.textContent = 'Name and phone are required';
+        errorEl.style.display = 'block';
+        return;
+      }
+      submitBtn.disabled = true;
+      try {
+        const res = await fetch('/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, phone })
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ message: 'Unable to add user' }));
+          throw new Error(err.message || 'Unable to add user');
+        }
+        nameEl.value = '';
+        phoneEl.value = '';
+        await fetchUsers();
+      } catch (err) {
+        errorEl.textContent = err.message || 'Something went wrong';
+        errorEl.style.display = 'block';
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    function startInlineEdit(container, user) {
+      container.innerHTML = '';
+      const left = document.createElement('div');
+      const nameInput = document.createElement('input');
+      nameInput.className = 'inline-input';
+      nameInput.value = user.name;
+      const phoneInput = document.createElement('input');
+      phoneInput.className = 'inline-input';
+      phoneInput.value = user.phone;
+      left.appendChild(nameInput);
+      left.appendChild(phoneInput);
+
+      const actions = document.createElement('div');
+      actions.className = 'actions';
+      const save = document.createElement('button');
+      save.textContent = 'Save';
+      const cancel = document.createElement('button');
+      cancel.className = 'btn-secondary';
+      cancel.textContent = 'Cancel';
+      actions.appendChild(save);
+      actions.appendChild(cancel);
+
+      container.appendChild(left);
+      container.appendChild(actions);
+
+      save.addEventListener('click', async () => {
+        const name = nameInput.value.trim();
+        const phone = phoneInput.value.trim();
+        if (!name || !phone) {
+          alert('Name and phone are required');
+          return;
+        }
+        try {
+          const res = await fetch(`/users/${encodeURIComponent(user.id)}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, phone })
+          });
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({ message: 'Unable to update user' }));
+            throw new Error(err.message || 'Unable to update user');
+          }
+          await fetchUsers();
+        } catch (e) {
+          alert(e.message || 'Failed to update');
+        }
+      });
+
+      cancel.addEventListener('click', fetchUsers);
+    }
+
+    async function deleteUser(id) {
+      if (!confirm('Delete this user?')) return;
+      try {
+        const res = await fetch(`/users/${encodeURIComponent(id)}`, { method: 'DELETE' });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ message: 'Unable to delete user' }));
+          throw new Error(err.message || 'Unable to delete user');
+        }
+        await fetchUsers();
+      } catch (e) {
+        alert(e.message || 'Failed to delete');
+      }
+    }
+
+    fetchUsers();
+  </script>
+</body>
+</html>

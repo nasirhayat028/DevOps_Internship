@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demodb-app
+spec:
+  selector:
+    matchLabels:
+      app: demodb-app
+  replicas: 2 
+  template:
+    metadata:
+      labels:
+        app: demodb-app
+    spec:
+      containers:
+      - name: demodb-app
+        image: nasirhayat028/multicontainer-app:v1
+
+      - name: demomongo-app
+        image: mongo:latest
+  
