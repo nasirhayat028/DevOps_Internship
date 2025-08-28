@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  @apply bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100 antialiased;
+}
+
+a {
+  @apply text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300;
+}
+
+/* Simple container */
+.container-default {
+  @apply max-w-6xl mx-auto px-4;
+}
+
+/* DevOps themed background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: radial-gradient(1200px 600px at 10% 10%, rgba(16,185,129,0.12), transparent 60%),
+              radial-gradient(800px 400px at 90% 30%, rgba(59,130,246,0.10), transparent 60%),
+              radial-gradient(1000px 500px at 30% 90%, rgba(234,179,8,0.08), transparent 60%);
+  pointer-events: none;
+}
+
+
